@@ -5,6 +5,7 @@ import json
 import os.path
 from pathlib import Path
 
+import cv2
 import numpy as np
 from matplotlib import pyplot as plt
 from pycocotools import mask as pycocotools_mask
@@ -20,14 +21,20 @@ from utilities.log.logger import setup_logger, logger
 from PIL import Image
 import matplotlib
 
+from utilities.mask import mask_utils
+from utilities.mask.mask_utils import bin_to_color
+
 sys.path.append('../utilities')
 
-def to_rle(args, json_file, coco, anno):
+
+def to_rle(args, json_file_path, coco, anno):
     image = coco.imgs.get((anno.get('image_id')))
     w, h = image.get('width'), image.get('height')
-    polygon = anno['segmentation'][0]  # Assuming there is only one polygon per annotation
-    rle_mask = pycocotools_mask.frPyObjects([polygon], h, w)
+    polygon = anno['segmentation']  # Assuming there is only one polygon per annotation
+    rle_mask = pycocotools_mask.frPyObjects(polygon, h, w)
+    anno['segmentation'] = rle_mask[0]
     binary_mask = pycocotools_mask.decode(rle_mask)
+    # make JSON serializable
     anno['segmentation'].update(
         {'counts': base64.b64encode(anno['segmentation']['counts']).decode('utf-8')}
     )
@@ -45,21 +52,32 @@ def to_rle(args, json_file, coco, anno):
     '''
 
     if args.debug_mask:
-        mask_debug_dir = os.path.join(args.output_dir, 'ann_mask', str(Path(json_file).parent.stem))
+        mask_debug_dir = os.path.join(args.output_dir, str(Path(json_file_path).parent.stem))
         file_utils.generate_directory_if_not_exists(mask_debug_dir)
-        cv2.imwrite(f"{os.path.join(mask_debug_dir, 'ann_' + str(anno.get('id')))}.png", binary_mask)
+        is_empty = mask_utils.is_empty(image=binary_mask)
+        assert is_empty == False, f"annotation id {anno.get('image_id')} is empty"
+        mask_file_name = f"{os.path.join(mask_debug_dir, 'ann_' + str(anno.get('id')))}.png"
+        cv2.imwrite(mask_file_name, bin_to_color(binary_mask))
     return anno
 
 
-def process_json_annotations_mp(args, json_file):
-    coco = COCO(json_file)
-    annotations = coco.anns
+def dump_coco_file(args, coco, json_file_path):
+    modified_json_file = os.path.join(args.output_dir,
+                                      str(Path(json_file_path).parent.stem),
+                                      f'{Path(json_file_path).stem}__bitmask.json')
+    file_utils.generate_directory_if_not_exists(Path(modified_json_file).parent)
+    # Save the modified annotations to the specified file
+    with open(modified_json_file, 'w') as output_file:
+        json.dump(coco.dataset, output_file)
 
+
+def process_json_annotations_mp(args, json_file_path):
+    coco = COCO(json_file_path)
+    annotations = coco.dataset['annotations']
     with tqdm(total=len(annotations), desc="Processing annotations") as pbar:
         with concurrent.futures.ThreadPoolExecutor() as executor:
             # Submit file processing tasks to the executor
-            rle_annotations = {executor.submit(to_rle, args, json_file, coco, anno): anno for id, anno in
-                               annotations.items()}
+            rle_annotations = {executor.submit(to_rle, args, json_file_path, coco, anno): anno for anno in annotations}
 
             # Retrieve results as they become available
             for future in concurrent.futures.as_completed(rle_annotations):
@@ -72,34 +90,33 @@ def process_json_annotations_mp(args, json_file):
                 finally:
                     pbar.update(1)
 
+    dump_coco_file(args, coco, json_file_path)
 
-def process_json_annotations(args, json_file):
-    coco = COCO(json_file)
-    annotations = coco.anns
+
+def process_json_annotations(args, json_file_path):
+    coco = COCO(json_file_path)
+    annotations = coco.dataset['annotations']
     rle_annotations = []
     with tqdm(total=len(annotations), desc="Processing annotations") as pbar:
 
         for anno in annotations:
             try:
-                rle_anno = to_rle(args, json_file, coco, anno)
+                rle_anno = to_rle(args, json_file_path, coco, anno)
                 rle_annotations.append(rle_anno)
             except Exception as e:
                 logger.error(f"Error processing annotation {anno.get('id')}: {e}")
             finally:
                 pbar.update(1)
 
-
-            pbar.update(1)
+    dump_coco_file(args, coco, json_file_path)
 
 
 def convert_rle(args):
     json_files_list = file_utils.find_files_with_suffix(args.input_dir, suffix='json')
     if args.multi_processing:
-        [process_json_annotations_mp(args, json_file) for json_file in json_files_list]
+        [process_json_annotations_mp(args, json_file_path) for json_file_path in json_files_list]
     else:
-        [process_json_annotations(args, json_file) for json_file in json_files_list]
-
-
+        [process_json_annotations(args, json_file_path) for json_file_path in json_files_list]
 
 
 def parse_arguments():

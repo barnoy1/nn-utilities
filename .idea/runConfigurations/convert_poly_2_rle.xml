@@ -12,7 +12,7 @@
     <option name="ADD_CONTENT_ROOTS" value="true" />
     <option name="ADD_SOURCE_ROOTS" value="true" />
     <option name="SCRIPT_NAME" value="$PROJECT_DIR$/scripts/convert_poly_2_rle.py" />
-    <option name="PARAMETERS" value="--input_dir $PROJECT_DIR$/../../datasets/Balloons.v19i.coco-segmentation --debug_mask" />
+    <option name="PARAMETERS" value="--input_dir $PROJECT_DIR$/../../datasets/Balloons.v19i.coco-segmentation --debug_mask --multi_processing" />
     <option name="SHOW_COMMAND_LINE" value="false" />
     <option name="EMULATE_TERMINAL" value="false" />
     <option name="MODULE_MODE" value="false" />

@@ -2,13 +2,17 @@ import PIL
 import numpy as np
 from PIL import Image
 import cv2
+
 PIL.Image.MAX_IMAGE_PIXELS = None
+
 
 def load_image_from_path(image_path):
     return cv2.imread(image_path, cv2.IMAGE_UNCHANGED).astype(np.uint8)
 
+
 def load_normalized_image_from_path(image_path):
     return cv2.imread(image_path, cv2.IMAGE_UNCHANGED).astype(np.float32) / float(255.0)
+
 
 def verify_image(image_path):
     try:
@@ -17,6 +21,7 @@ def verify_image(image_path):
             return True
     except Exception as e:
         return False
+
 
 def bin_to_color(image, color=None):
     bin_mask = (image > 0.5) * 1
@@ -28,7 +33,7 @@ def bin_to_color(image, color=None):
     color_mask[x, y] = color
     return color_mask
 
+
 def is_empty(image):
     is_all_zero = np.all((image == 0))
-    if np.all(is_all_zero):
-        return True
+    return is_all_zero
