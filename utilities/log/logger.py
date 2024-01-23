@@ -6,11 +6,10 @@ import os
 import sys
 from pathlib import Path
 
-from utilities.classes.singleton import Singleton
-from utilities.filesystem import file_utils
+from decorators.singleton import Singleton
+from utilities import file_utils
 from utilities.log.color import RESET, BOLD, YELLOW, RED
 from utilities.log.logparam import LogParams
-from utilities.log import color
 
 logger = logging.getLogger(__name__)
 

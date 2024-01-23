@@ -1,12 +1,11 @@
 import json
 import platform
-import re
 from pathlib import Path
 
 from six import string_types
 from six.moves import collections_abc
 
-from utilities.filesystem import file_utils
+from utilities import file_utils
 
 
 # region conversion functions

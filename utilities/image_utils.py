@@ -37,3 +37,10 @@ def bin_to_color(image, color=None):
 def is_empty(image):
     is_all_zero = np.all((image == 0))
     return is_all_zero
+
+
+def deserialize_contour_points(point_list):
+    points = [tuple(map(float, p.split(','))) for p in point_list.split(';')]
+    points = np.array([(int(p[0]), int(p[1])) for p in points])
+    points = points.astype(int)
+    return points
