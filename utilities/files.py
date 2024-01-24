@@ -1,13 +1,10 @@
 import glob
-import json
 import os
-import platform
 import shutil
 from pathlib import Path
-from urllib.parse import unquote
+
 import pandas as pd
 from tabulate import tabulate
-from utilities.log import logger
 
 
 def generate_from_list_csv_report(target_list, col_name='', report_full_path='report.csv'):
@@ -30,11 +27,6 @@ def delete_directory(path):
     if os.path.exists(path):
         import shutil
         shutil.rmtree(path)
-
-
-def generate_directory_if_not_exists(path):
-    if not os.path.exists(path):
-        os.makedirs(path, exist_ok=True)
 
 
 def move_directory(src, dst, symlinks=False, ignore=None):

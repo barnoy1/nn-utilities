@@ -6,8 +6,7 @@ import os
 import sys
 from pathlib import Path
 
-from decorators.singleton import Singleton
-from utilities import file_utils
+from utilities.decorators.singleton import Singleton
 from utilities.log.color import RESET, BOLD, YELLOW, RED
 from utilities.log.logparam import LogParams
 
@@ -79,7 +78,7 @@ class Logger(object):
         streamHandler = logging.StreamHandler(sys.stdout)
         logger.addHandler(streamHandler)
 
-        file_utils.generate_directory_if_not_exists(Path(self.log_file_path).parent)
+        os.makedirs(Path(self.log_file_path).parent, exist_ok=True)
         file_handler = logging.FileHandler(self.log_file_path)
         formatter = logging.Formatter('%(asctime)s.%(msecs)03d %(levelname)s %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
         file_handler.setFormatter(formatter)

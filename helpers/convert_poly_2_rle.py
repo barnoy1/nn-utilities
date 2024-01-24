@@ -12,13 +12,15 @@ import sys
 from pycocotools.coco import COCO
 from tqdm import tqdm
 
-import utilities.json_utils
-from utilities import file_utils, image_utils
-from utilities.log.logger import setup_logger, logger
-
-from utilities.image_utils import bin_to_color
+from utilities.decorators.time_measurement import timing_decorator
 
 sys.path.append('../utilities')
+
+from utilities.log.logger import setup_logger, logger
+import utilities.json
+import utilities.files
+import utilities.coco
+import utilities.image
 
 
 def to_rle(args, json_file_path, coco, anno):
@@ -47,11 +49,11 @@ def to_rle(args, json_file_path, coco, anno):
 
     if args.debug_mask:
         mask_debug_dir = os.path.join(args.output_dir, str(Path(json_file_path).parent.stem))
-        file_utils.generate_directory_if_not_exists(mask_debug_dir)
-        is_empty = image_utils.is_empty(image=binary_mask)
+        os.makedirs(mask_debug_dir, exist_ok=True)
+        is_empty = utilities.image.is_empty(image=binary_mask)
         assert is_empty == False, f"annotation id {anno.get('image_id')} is empty"
         mask_file_name = f"{os.path.join(mask_debug_dir, 'ann_' + str(anno.get('id')))}.png"
-        cv2.imwrite(mask_file_name, bin_to_color(binary_mask))
+        cv2.imwrite(mask_file_name, utilities.image.bin_to_color(binary_mask))
     return anno
 
 
@@ -74,8 +76,7 @@ def process_json_annotations_mp(args, json_file_path):
                 finally:
                     pbar.update(1)
 
-    from utilities.coco_utils import dump_coco_file
-    dump_coco_file(args, coco, json_file_path, suffix='bitmask')
+    utilities.coco.dump_coco_file(args, coco, json_file_path, suffix='bitmask')
 
 
 def process_json_annotations(args, json_file_path):
@@ -93,12 +94,12 @@ def process_json_annotations(args, json_file_path):
             finally:
                 pbar.update(1)
 
-    from utilities.coco_utils import dump_coco_file
-    dump_coco_file(args, coco, json_file_path, suffix='bitmask')
+    utilities.coco.dump_coco_file(args, coco, json_file_path, suffix='bitmask')
 
 
+@timing_decorator
 def convert_rle(args):
-    json_files_list = file_utils.find_files_with_suffix(args.input_dir, suffix='json')
+    json_files_list = utilities.files.find_files_with_suffix(args.input_dir, suffix='json')
     if args.multi_processing:
         [process_json_annotations_mp(args, json_file_path) for json_file_path in json_files_list]
     else:
@@ -117,9 +118,9 @@ def parse_arguments():
 
 def main():
     args = parse_arguments()
-    json_args = (utilities.json_utils
-                 .dump_json_exec_args(args=args, output_json_path=os.path.join(args.output_dir, 'parsed_args.json')))
-    args_msg = utilities.json_utils.pretty_print_dict('parsed_args', json_args)
+    json_args = (utilities.json.dump_json_exec_args(args=args,
+                                                    output_json_path=os.path.join(args.output_dir, 'parsed_args.json')))
+    args_msg = utilities.json.pretty_print_dict('parsed_args', json_args)
     logger = setup_logger(args)
     from utilities.log import color
     logger.info(args_msg, color.BLUE)

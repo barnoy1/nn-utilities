@@ -3,9 +3,6 @@ import json
 import os
 from pathlib import Path
 
-from utilities import file_utils
-
-from pycocotools.coco import COCO
 from pycocotools import mask as pycocotools_mask
 
 
@@ -28,11 +25,12 @@ def deserialize_rle(anno, mask_format='bitmask'):
             {'counts': base64.b64decode(anno['segmentation']['counts']).decode('utf-8')}
         )
     if mask_format == 'polygon':
-        from utilities.image_utils import deserialize_contour_points
+        from utilities.image import deserialize_contour_points
         anno.update(
             {'segmentation': [deserialize_contour_points(anno['segmentation']).tolist()]}
         )
     return anno
+
 
 def dump_coco_file(args, coco, json_file_path, suffix=None):
     coco_file_name = f'{Path(json_file_path).stem}'
@@ -41,7 +39,7 @@ def dump_coco_file(args, coco, json_file_path, suffix=None):
     modified_json_file = os.path.join(args.output_dir,
                                       str(Path(json_file_path).parent.stem),
                                       f'{coco_file_name}.json')
-    file_utils.generate_directory_if_not_exists(Path(modified_json_file).parent)
+    os.makedirs(str(Path(modified_json_file).parent), exist_ok=True)
     # Save the modified annotations to the specified file
     with open(modified_json_file, 'w') as output_file:
         json.dump(coco.dataset, output_file)

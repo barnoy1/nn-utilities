@@ -7,7 +7,8 @@ def timing_decorator(func):
         result = func(*args, **kwargs)
         end_time = time.time()
         elapsed_time = end_time - start_time
-        print(f"{func.__name__} took {elapsed_time:.2f} seconds to run")
+        from utilities.log.logger import logger
+        logger.info(f"{func.__name__} took {elapsed_time:.2f} seconds to run")
         return result
 
     return wrapper

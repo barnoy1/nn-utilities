@@ -1,11 +1,10 @@
 import json
+import os
 import platform
 from pathlib import Path
 
 from six import string_types
 from six.moves import collections_abc
-
-from utilities import file_utils
 
 
 # region conversion functions
@@ -64,7 +63,7 @@ def pretty_print_dict(message, in_dict):
 
 def dump_json_exec_args(args, output_json_path='parsed_args.json'):
     args_dict = vars(args)
-    file_utils.generate_directory_if_not_exists(Path(output_json_path).parent)
+    os.makedirs(str(Path(output_json_path).parent), exist_ok=True)
     with open(output_json_path, 'w') as json_file:
         json.dump(args_dict, json_file, indent=4)
     return args_dict

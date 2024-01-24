@@ -9,7 +9,7 @@ import shapely.geometry as geometry
 from descartes import PolygonPatch
 from shapely.ops import polygonize, cascaded_union, unary_union
 
-from pathology_analyzer import logger
+from utilities.log.logger import logger
 
 
 def plot_polygon(polygon):
